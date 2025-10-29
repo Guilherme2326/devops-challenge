@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devops-challenge-api
+    ports:
+      - "8888:8888"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/healthcheck')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app-network
+    labels:
+      - "com.example.description=DevOps Challenge API"
+      - "com.example.service=api"
+
+  # Nginx como reverse proxy (opcional, mas recomendado para produção)
+  nginx:
+    image: nginx:alpine
+    container_name: devops-challenge-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - app-network
+    labels:
+      - "com.example.description=Nginx Reverse Proxy"
+      - "com.example.service=proxy"
+
+networks:
+  app-network:
+    driver: bridge
+
